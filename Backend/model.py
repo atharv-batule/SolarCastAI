@@ -1,86 +1,128 @@
 import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-import joblib  # Used to save the model
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
 
-# --- 1. DATA PREPARATION ---
-# Generating synthetic data so the code works 'out of the box'
-# Replace this block with: df = pd.read_csv('your_weather_file.csv')
-data_size = 1000
-np.random.seed(42)
-df = pd.DataFrame({
-    'WindSpeed': np.random.uniform(0, 30, data_size),
-    'Sunshine': np.random.uniform(0, 12, data_size),
-    'AirPressure': np.random.uniform(980, 1030, data_size),
-    'Radiation': np.random.uniform(0, 1000, data_size),
-    'AirTemperature': np.random.uniform(-5, 40, data_size),
-    'RelativeAirHumidity': np.random.uniform(20, 100, data_size),
-    'Hour': np.tile(np.arange(24), data_size // 24 + 1)[:data_size],
-    'DayOfYear': np.repeat(np.arange(1, 366), 24)[:data_size]
-})
+def main():
+    print("🚀 Starting Solar Power Forecasting Model...\n")
 
-# Define attributes
-features = [
-    'WindSpeed', 'Sunshine', 'AirPressure', 'Radiation', 
-    'AirTemperature', 'RelativeAirHumidity', 'Hour', 'DayOfYear'
-]
+    # 1️⃣ Load the Dataset
+    print("Loading dataset...")
+    try:
+        data = pd.read_csv("c:\\Users\\athar\\Downloads\\Solar Power Plant Data.csv")
+    except FileNotFoundError:
+        print("❌ Error: 'solar_data.csv' not found. Please ensure it's in the same directory.")
+        return
 
-# Create 'Next Day' Targets (Shift by 24 hours)
-prediction_lag = 24 
-df_targets = df[features].shift(-prediction_lag)
-df_targets.columns = [f"Next_{col}" for col in features]
+    # 2️⃣ Convert the Time Column
+    print("Processing datetime column...")
+    data['Date-Hour(NMT)'] = pd.to_datetime(
+        data['Date-Hour(NMT)'],
+        format='%d.%m.%Y-%H:%M'
+    )
 
-# Clean up: Merge features and targets, drop NaN rows created by shifting
-processed_data = pd.concat([df[features], df_targets], axis=1).dropna()
+    # 3️⃣ Feature Engineering (Extract Time Features)
+    data['hour'] = data['Date-Hour(NMT)'].dt.hour
+    data['day'] = data['Date-Hour(NMT)'].dt.day
+    data['month'] = data['Date-Hour(NMT)'].dt.month
 
-X = processed_data[features]
-y = processed_data[[f"Next_{col}" for col in features]]
+    # Remove the original datetime column
+    data = data.drop(columns=['Date-Hour(NMT)'])
 
-# --- 2. MODEL TRAINING ---
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # 4️⃣ Handle Missing Values (Updated Pandas Syntax)
+    print("Cleaning missing values...")
+    data = data.ffill()
 
-# Multi-output Random Forest
-model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
-model.fit(X_train, y_train)
+    # 5️⃣ Define Features and Target
+    X = data[['WindSpeed',
+              'Sunshine',
+              'AirPressure',
+              'Radiation',
+              'AirTemperature',
+              'RelativeAirHumidity',
+              'hour',
+              'month']]
+    y = data['SystemProduction']
 
-# Save the model for later use in your Backend
-joblib.dump(model, 'weather_model.pkl')
-print("Model trained and saved as 'weather_model.pkl'")
+    # 6️⃣ Train/Test Split
+    print("Splitting data into training and testing sets...")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-# --- 3. READY-MADE EXAMPLE (PREDICTION) ---
+    # 7️⃣ Train the Model (Random Forest)
+    print("Training the Random Forest model (this might take a few seconds)...")
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
 
-def predict_tomorrow(api_data):
-    """
-    Takes a dictionary of current weather and returns predicted weather for 24h later.
-    """
-    # Convert input to DataFrame
-    input_df = pd.DataFrame([api_data])
+    # 8️⃣ Make Predictions
+    print("Making predictions...")
+    predictions = model.predict(X_test)
+
+    # 9️⃣ Evaluate Model Performance
+    mae = mean_absolute_error(y_test, predictions)
+    r2 = r2_score(y_test, predictions)
+
+    print("\n✅ --- Model Evaluation ---")
+    print(f"Mean Absolute Error (MAE): {mae:.2f}")
+    print(f"R-squared (R2) Score: {r2:.4f}")
+    print("--------------------------\n")
+
+    # 🔟 Example Prediction
+    print("Testing a sample prediction...")
+    sample = [[
+        5,      # WindSpeed
+        8,      # Sunshine
+        1012,   # AirPressure
+        600,    # Radiation
+        30,     # AirTemperature
+        60,     # Humidity
+        12,     # Hour
+        6       # Month
+    ]]
     
-    # Ensure columns are in the correct order
-    input_df = input_df[features]
-    
-    # Predict
-    prediction = model.predict(input_df)
-    
-    # Format the output nicely
-    result_columns = [f"Next_{col}" for col in features]
-    return dict(zip(result_columns, prediction[0]))
+    # Needs a DataFrame to match feature names and suppress sklearn warnings
+    sample_df = pd.DataFrame(sample, columns=X.columns)
+    sample_prediction = model.predict(sample_df)
+    print(f"Predicted Solar Power for sample: {sample_prediction[0]:.2f}\n")
 
-# Example: Data you might get from an API right now
-current_weather_sample = {
-    'WindSpeed': 15.2,
-    'Sunshine': 5.5,
-    'AirPressure': 1015.0,
-    'Radiation': 600.0,
-    'AirTemperature': 28.5,
-    'RelativeAirHumidity': 45.0,
-    'Hour': 12,        # 12:00 PM
-    'DayOfYear': 150   # Late May
-}
+    # --- Visualizations ---
+    print("📊 Generating Visualizations... (Close each window to see the next one)")
 
-tomorrow_forecast = predict_tomorrow(current_weather_sample)
+    # Viz 1: Actual vs Predicted
+    plt.figure(figsize=(10, 5))
+    plt.plot(y_test.values[:100], label="Actual")
+    plt.plot(predictions[:100], label="Predicted", alpha=0.7)
+    plt.legend()
+    plt.title("Solar Power Forecasting: Actual vs Predicted (First 100 Samples)")
+    plt.xlabel("Samples")
+    plt.ylabel("System Production")
+    plt.tight_layout()
+    plt.show()
 
-print("\n--- PREDICTION FOR TOMORROW AT THIS TIME ---")
-for key, value in tomorrow_forecast.items():
-    print(f"{key}: {value:.2f}")
+    # Viz 2: Feature Importance
+    importance = model.feature_importances_
+    plt.figure(figsize=(10, 5))
+    plt.bar(X.columns, importance, color='orange')
+    plt.title("Weather Impact on Solar Production (Feature Importance)")
+    plt.xticks(rotation=45)
+    plt.ylabel("Importance Score")
+    plt.tight_layout()
+    plt.show()
+
+    # Viz 3: Average Solar Production by Hour
+    peak_hours = data.groupby('hour')['SystemProduction'].mean()
+    plt.figure(figsize=(10, 5))
+    peak_hours.plot(color='green', marker='o')
+    plt.title("Average Solar Production by Hour of Day")
+    plt.xlabel("Hour of Day (0-23)")
+    plt.ylabel("Average Production")
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
+    print("🎉 Run complete!")
+
+if __name__ == "__main__":
+    main()
