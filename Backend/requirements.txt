@@ -3,3 +3,10 @@ pandas
 numpy
 joblib
 matplotlib
+seaborn
+flask
+flask-cors
+openmeteo-requests 
+requests-cache
+  retry-requests
+  uvicorn
