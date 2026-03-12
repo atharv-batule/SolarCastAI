@@ -18,6 +18,7 @@ def predict_today(lat, lon):
 "AirTemperature",
 "WindSpeed",
 "hour"
+
 ]
 ]
 

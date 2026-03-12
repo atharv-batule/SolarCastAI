@@ -24,7 +24,8 @@ X = data[
 "Sunshine",
 "AirTemperature",
 "WindSpeed",
-"hour"
+"hour",
+
 ]
 ]
 
