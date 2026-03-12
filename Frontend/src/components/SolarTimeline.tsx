@@ -1,4 +1,5 @@
-import { HourlyData } from "@/lib/mock-data";
+import { HourlyData } from "@/lib/types";
+
 
 interface SolarTimelineProps {
   data: HourlyData[];

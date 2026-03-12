@@ -3,7 +3,7 @@ export type HourlyData = {
   production: number;
 };
 
-type DailyForecast = {
+export type DailyForecast = {
   date: string;
   hourlyData: HourlyData[];
   totalProduction: number;
