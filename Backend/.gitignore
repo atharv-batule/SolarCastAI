@@ -1,3 +1,5 @@
+node_modules
+
 # Python cache
 
 **pycache**/
@@ -63,3 +65,4 @@ htmlcov/
 
 *.tmp
 *.swp
+*.sqlite
