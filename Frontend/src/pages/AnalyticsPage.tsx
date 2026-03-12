@@ -1,24 +1,51 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
+import { fetchAnalytics } from "@/lib/analytics-api";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import Navbar from "@/components/Navbar";
 import RadiationHeatmap from "@/components/RadiationHeatmap";
-import { generateHistoricalData } from "@/lib/mock-data";
 
 const AnalyticsPage = () => {
-  const historical = useMemo(() => generateHistoricalData(14), []);
+  const [dailyTrend, setDailyTrend] = useState<{ date: string; production: number }[]>([]);
+  const [scatterRadiation, setScatterRadiation] = useState<{ radiation: number; production: number }[]>([]);
+  const [scatterTemp, setScatterTemp] = useState<{ temperature: number; production: number }[]>([]);
+  const [heatmapData, setHeatmapData] = useState<{ date: string; hour: number; PredictedSolarPower: number }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const dailyTrend = historical.map(d => ({
-    date: d.date.slice(5),
-    production: d.totalProduction,
-  }));
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const data = await fetchAnalytics();
 
-  const scatterRadiation = historical.flatMap(d =>
-    d.hourlyData.map(h => ({ radiation: h.radiation, production: h.production }))
-  );
+        setDailyTrend(
+          data.solar_production_trends.map(d => ({
+            date: d.date.slice(5),
+            production: d.PredictedSolarPower,
+          }))
+        );
 
-  const scatterTemp = historical.flatMap(d =>
-    d.hourlyData.map(h => ({ temperature: h.temperature, production: h.production }))
-  );
+        setScatterRadiation(
+          data.radiation_vs_production.map(d => ({
+            radiation: d.Radiation,
+            production: d.PredictedSolarPower,
+          }))
+        );
+
+        setScatterTemp(
+          data.temperature_vs_production.map(d => ({
+            temperature: d.AirTemperature,
+            production: d.PredictedSolarPower,
+          }))
+        );
+
+        setHeatmapData(data.heatmap);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  run();
+}, []);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,6 +57,7 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Daily Trend */}
+        {!loading && dailyTrend.length > 0 && (
         <div className="glass-card rounded-xl p-6 mb-8">
           <h3 className="font-display font-semibold text-lg text-foreground mb-4">Solar Production Trends</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -42,9 +70,12 @@ const AnalyticsPage = () => {
             </LineChart>
           </ResponsiveContainer>
         </div>
+        )}
 
         {/* Scatter Plots */}
+        
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {!loading && scatterRadiation.length > 0 && (
           <div className="glass-card rounded-xl p-6">
             <h3 className="font-display font-semibold text-lg text-foreground mb-4">Radiation vs Production</h3>
             <ResponsiveContainer width="100%" height={280}>
@@ -57,7 +88,9 @@ const AnalyticsPage = () => {
               </ScatterChart>
             </ResponsiveContainer>
           </div>
+          )}
 
+          {!loading && scatterTemp.length > 0 && (
           <div className="glass-card rounded-xl p-6">
             <h3 className="font-display font-semibold text-lg text-foreground mb-4">Temperature vs Production</h3>
             <ResponsiveContainer width="100%" height={280}>
@@ -70,10 +103,14 @@ const AnalyticsPage = () => {
               </ScatterChart>
             </ResponsiveContainer>
           </div>
+          )}
         </div>
 
         {/* Heatmap */}
-        <RadiationHeatmap days={14} />
+        {!loading && heatmapData.length > 0 && (
+          <RadiationHeatmap data={heatmapData} />
+        )}
+
       </div>
     </div>
   );

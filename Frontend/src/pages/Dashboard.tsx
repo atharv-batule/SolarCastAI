@@ -10,6 +10,8 @@ import SolarWindow from "@/components/SolarWindow";
 import { useEffect, useState } from "react";
 import { fetchSolarForecast } from "@/lib/forecast-api";
 import { DailyForecast, HourlyData } from "@/lib/types";
+import { fetchAnalytics } from "@/lib/analytics-api";
+
 //import { generateForecast, generateInsights } from "@/lib/mock-data";
 
 function parseHour(dateHour: string) {
@@ -18,7 +20,8 @@ function parseHour(dateHour: string) {
 
 const Dashboard = () => {
   const [forecast, setForecast] = useState<DailyForecast | null>(null);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [heatmapData, setHeatmapData] = useState<{ date: string; hour: number; PredictedSolarPower: number }[]>([]);
 
 useEffect(() => {
   const run = async () => {
@@ -36,6 +39,7 @@ useEffect(() => {
         hour: parseHour(r["Date-Hour"]),
         production: r["PredictedSolarPower"],
       }));
+      
 
       const totalProduction = hourlyData.reduce((s, d) => s + d.production, 0);
 
@@ -67,6 +71,10 @@ useEffect(() => {
         optimalWindowEnd: optimalEnd,
         optimalWindowProduction: optimalProduction,
       });
+
+      const analytics = await fetchAnalytics();
+      setHeatmapData(analytics.heatmap);
+
     } finally {
       setLoading(false);
     }
@@ -122,9 +130,12 @@ const latestProd =
         </div> */}
 
         {/* Heatmap */}
-        <div className="mb-8">
-          <RadiationHeatmap days={7} />
-        </div>
+        {heatmapData.length > 0 && (
+          <div className="mb-8">
+            <RadiationHeatmap data={heatmapData} />
+          </div>
+        )}
+
       </div>
       )}
     </div>

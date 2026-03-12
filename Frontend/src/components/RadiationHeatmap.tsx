@@ -1,17 +1,27 @@
-import { getHeatmapData } from "@/lib/mock-data";
-
-interface RadiationHeatmapProps {
-  days?: number;
+interface HeatmapPoint {
+  date: string;
+  hour: number;
+  PredictedSolarPower: number;
 }
 
-const RadiationHeatmap = ({ days = 7 }: RadiationHeatmapProps) => {
-  const data = getHeatmapData(days);
+interface RadiationHeatmapProps {
+  data: HeatmapPoint[];
+}
 
-  const allValues = data.flatMap(d => d.hours.map(h => h.radiation));
-  const maxRad = Math.max(...allValues);
+const RadiationHeatmap = ({ data }: RadiationHeatmapProps) => {
+  const dates = Array.from(new Set(data.map(d => d.date))).sort();
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  const valueMap = new Map<string, number>();
+  data.forEach(d => {
+    valueMap.set(`${d.date}-${d.hour}`, d.PredictedSolarPower);
+  });
+
+  const allValues = data.map(d => d.PredictedSolarPower);
+  const maxVal = Math.max(...allValues, 0.0001);
 
   const getColor = (value: number) => {
-    const ratio = value / maxRad;
+    const ratio = value / maxVal;
     if (ratio > 0.8) return "bg-solar-yellow";
     if (ratio > 0.6) return "bg-solar-amber";
     if (ratio > 0.4) return "bg-solar-orange/70";
@@ -22,24 +32,27 @@ const RadiationHeatmap = ({ days = 7 }: RadiationHeatmapProps) => {
 
   return (
     <div className="glass-card rounded-xl p-6">
-      <h3 className="font-display font-semibold text-lg text-foreground mb-4">Radiation Heatmap</h3>
+      <h3 className="font-display font-semibold text-lg text-foreground mb-4">Production Heatmap</h3>
       <div className="overflow-x-auto">
         <div className="min-w-[600px]">
           <div className="flex gap-0.5 mb-1 pl-20">
-            {Array.from({ length: 24 }, (_, i) => (
-              <div key={i} className="w-6 text-center text-[9px] text-muted-foreground">{i}</div>
+            {hours.map((h) => (
+              <div key={h} className="w-6 text-center text-[9px] text-muted-foreground">{h}</div>
             ))}
           </div>
-          {data.map((day) => (
-            <div key={day.date} className="flex items-center gap-0.5 mb-0.5">
-              <span className="w-20 text-[10px] text-muted-foreground text-right pr-2">{day.date.slice(5)}</span>
-              {day.hours.map((h) => (
-                <div
-                  key={h.hour}
-                  className={`w-6 h-5 rounded-sm ${getColor(h.radiation)} transition-colors`}
-                  title={`${day.date} ${h.hour}:00 - ${h.radiation} W/m²`}
-                />
-              ))}
+          {dates.map((date) => (
+            <div key={date} className="flex items-center gap-0.5 mb-0.5">
+              <span className="w-20 text-[10px] text-muted-foreground text-right pr-2">{date.slice(5)}</span>
+              {hours.map((h) => {
+                const value = valueMap.get(`${date}-${h}`) ?? 0;
+                return (
+                  <div
+                    key={h}
+                    className={`w-6 h-5 rounded-sm ${getColor(value)} transition-colors`}
+                    title={`${date} ${h}:00 - ${value.toFixed(2)} MW`}
+                  />
+                );
+              })}
             </div>
           ))}
         </div>
