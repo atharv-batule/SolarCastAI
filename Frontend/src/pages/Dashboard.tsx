@@ -43,6 +43,15 @@ useEffect(() => {
 
       const totalProduction = hourlyData.reduce((s, d) => s + d.production, 0);
 
+      const analyticss = await fetchAnalytics();
+
+      const avgDailyProduction =
+        analyticss.solar_production_trends.length > 0
+          ? analyticss.solar_production_trends.reduce((s, d) => s + d.PredictedSolarPower, 0) /
+            analyticss.solar_production_trends.length
+          : null;
+
+
       const peakEntry = hourlyData.reduce(
         (max, d) => (d.production > max.production ? d : max),
         hourlyData[0]
@@ -56,9 +65,9 @@ useEffect(() => {
         .filter(d => d.hour >= optimalStart && d.hour <= optimalEnd)
         .reduce((sum, d) => sum + d.production, 0);
 
-      const solarPotentialScore = Math.round(
-        Math.min(100, (totalProduction / 80) * 100)
-      );
+      const solarPotentialScore = avgDailyProduction && avgDailyProduction > 0
+      ? Math.round(Math.min(100, (totalProduction / avgDailyProduction) * 100))
+      : 0;
 
       setForecast({
         date: today,

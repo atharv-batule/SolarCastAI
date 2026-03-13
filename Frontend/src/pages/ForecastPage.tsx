@@ -4,10 +4,11 @@ import { CalendarIcon, Loader2, Zap, Sun, Clock, Gauge } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import MetricCard from "@/components/MetricCard";
 import ProductionChart from "@/components/ProductionChart";
-import WeatherSummary from "@/components/WeatherSummary";
 import SolarWindow from "@/components/SolarWindow";
-import InsightPanel from "@/components/InsightPanel";
+import InsightsSection from "@/components/InsightsSection";
 import { fetchSolarForecast, BackendForecastRow } from "@/lib/forecast-api";
+import { fetchAnalytics } from "@/lib/analytics-api";
+
 // import { generateForecast, generateInsights, DailyForecast } from "@/lib/mock-data";
 
 type HourlyData = {
@@ -59,6 +60,14 @@ const ForecastPage = () => {
 
     const totalProduction = hourlyData.reduce((s, d) => s + d.production, 0);
 
+    const analytics = await fetchAnalytics();
+
+    const avgDailyProduction =
+      analytics.solar_production_trends.length > 0
+        ? analytics.solar_production_trends.reduce((s, d) => s + d.PredictedSolarPower, 0) /
+          analytics.solar_production_trends.length
+        : null;
+
     const peakEntry = hourlyData.reduce(
       (max, d) => (d.production > max.production ? d : max),
       hourlyData[0]
@@ -72,9 +81,9 @@ const ForecastPage = () => {
       .filter(d => d.hour >= optimalStart && d.hour <= optimalEnd)
       .reduce((sum, d) => sum + d.production, 0);
 
-    const solarPotentialScore = Math.round(
-      Math.min(100, (totalProduction / 80) * 100)
-    );
+    const solarPotentialScore = avgDailyProduction && avgDailyProduction > 0
+    ? Math.round(Math.min(100, (totalProduction / avgDailyProduction) * 100))
+    : 0;
 
     const forecast: DailyForecast = {
       date: selectedDate,
@@ -195,6 +204,7 @@ const ForecastPage = () => {
               </div> */}
               {/* Weather + Insights removed until backend provides weather data */}
 
+              <InsightsSection />
             </motion.div>
           )}
         </AnimatePresence>

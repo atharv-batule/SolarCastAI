@@ -6,7 +6,6 @@ const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/forecast", label: "Forecast", icon: LineChart },
   { path: "/analytics", label: "Analytics", icon: BarChart3 },
-  { path: "/insights", label: "Insights", icon: Lightbulb },
 ];
 
 const Navbar = () => {
