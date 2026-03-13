@@ -107,9 +107,7 @@ data.
 
 ## Visualization
 
--   Matplotlib
--   Plotly
--   Streamlit Dashboard
+-   Recharts
 
 ## Frontend
 
@@ -262,5 +260,4 @@ regression modeling**.
 ## Possible Models
 
 -   Random Forest Regression
--   XGBoost Regression
 -   LSTM (for advanced forecasting)
