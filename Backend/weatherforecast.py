@@ -25,7 +25,7 @@ def fetch_weather_dataset(lat, lon):
             "temperature_2m",
             "relative_humidity_2m"
         ],
-        "forecast_days": 7,
+        "forecast_days": 16,
         "timezone": "Asia/Kolkata"
     }
 

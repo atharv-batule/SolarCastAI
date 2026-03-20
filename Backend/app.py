@@ -56,6 +56,9 @@ def solar_forecast():
             "icon": "chart"
         }
     ]
+    forecast_df = df.copy()
+    forecast_df["Date-Hour"] = forecast_df["Date-Hour"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    forecast = forecast_df.to_dict(orient="records")
 
     response = {
         "forecast": forecast,
