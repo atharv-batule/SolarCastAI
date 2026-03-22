@@ -7,7 +7,6 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import ForecastPage from "./pages/ForecastPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
-import InsightsPage from "./pages/InsightsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +22,6 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/forecast" element={<ForecastPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/insights" element={<InsightsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
