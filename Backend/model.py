@@ -14,8 +14,24 @@ data['Date-Hour(NMT)'] = pd.to_datetime(
 )
 
 data['hour'] = data['Date-Hour(NMT)'].dt.hour
+data['month'] = data['Date-Hour(NMT)'].dt.month
+
+#
+data["lag_1"] = data["SystemProduction"].shift(1)
+data["lag_2"] = data["SystemProduction"].shift(2)
+data["lag_3"] = data["SystemProduction"].shift(3)
+
+data["lag_24"] = data["SystemProduction"].shift(24)
+data["lag_48"] = data["SystemProduction"].shift(48)
+
+data["rolling_mean_6"] = data["SystemProduction"].rolling(6).mean()
+data["rolling_std_6"] = data["SystemProduction"].rolling(6).std()
+
 
 data = data.ffill()
+data = data.dropna()
+
+
 
 # Selected features based on correlation
 X = data[
@@ -25,7 +41,19 @@ X = data[
 "AirTemperature",
 "WindSpeed",
 "hour",
+"AirPressure",
+"month",
+"RelativeAirHumidity",
+ # lag features
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_24",
+    "lag_48",
 
+    # rolling features
+    "rolling_mean_6",
+    "rolling_std_6"
 ]
 ]
 
