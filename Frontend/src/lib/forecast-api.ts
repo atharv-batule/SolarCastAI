@@ -16,7 +16,7 @@ export type ForecastResponse = {
 };
 
 export async function fetchSolarForecast(): Promise<ForecastResponse> {
-  const res = await fetch("/api/solar-forecast");
+  const res = await fetch("http://127.0.0.1:5000/api/solar-forecast")
   if (!res.ok) throw new Error("Forecast fetch failed");
   return (await res.json()) as ForecastResponse;
 }

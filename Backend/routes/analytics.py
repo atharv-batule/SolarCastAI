@@ -2,10 +2,10 @@ from flask import Blueprint,Flask, app, jsonify
 import pandas as pd
 from predict import predict_today
 from weatherforecast import fetch_weather_dataset
-from analytics import analytics
+from Controller.analytics import analytics
 
 
-analytics_bp = Blueprint("analytics", __name__)
+analytics_bp = Blueprint("analytics", __name__, url_prefix="/api")
 
 @analytics_bp.route("/analytics", methods=["GET"])
 def get_analytics():
